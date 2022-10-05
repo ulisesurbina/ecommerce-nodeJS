@@ -13,18 +13,20 @@ const sendErrorDev = (error, req, res) => {
 };
 
 const sendErrorProd = (error, req, res) => {
-    res.status(error.statusCode).json({
-        status: error.status,
+    const statusCode = error.statusCode || 500;
+
+    res.status(statusCode).json({
+        status: "fail",
         message: error.message || "Something went wrong!",
     });
 };
 
 const tokenExpiredError = () => {
-    return new AppError("Session expired", 403);
+    return new AppError("Session expired", 401);
 };
 
 const tokenInvalidSignatureError = () => {
-    return new AppError("Session invalid", 403);
+    return new AppError("Session invalid", 401);
 };
 
 const dbUniqueConstraintError = () => {
@@ -32,7 +34,6 @@ const dbUniqueConstraintError = () => {
 };
 
 const globalErrorHandler = (error, req, res, next) => {
-    // set default values for original error obj
     error.statusCode = error.statusCode || 500;
     error.status = error.status || "fail";
 

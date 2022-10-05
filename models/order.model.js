@@ -3,7 +3,6 @@ const { db, DataTypes } = require("../utils/database.util.js");
 const Order = db.define("order", {
     id: {
         type: DataTypes.INTEGER,
-        unique: true,
         autoIncrement: true,
         allowNull: false,
         primaryKey: true,
@@ -17,12 +16,11 @@ const Order = db.define("order", {
         allowNull: false,
     },
     totalPrice: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.DECIMAL(10, 2),
         allowNull: false,
     },
     status: {
         type: DataTypes.STRING,
-        allowNull: false,
         defaultValue: "active",
     },
 });

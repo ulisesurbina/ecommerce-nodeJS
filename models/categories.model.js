@@ -3,7 +3,6 @@ const { db, DataTypes } = require("../utils/database.util.js");
 const Category = db.define("category", {
     id: {
         type: DataTypes.INTEGER,
-        unique: true,
         autoIncrement: true,
         allowNull: false,
         primaryKey: true,
@@ -14,7 +13,6 @@ const Category = db.define("category", {
     },
     status: {
         type: DataTypes.STRING,
-        allowNull: false,
         defaultValue: "active",
     },
 });

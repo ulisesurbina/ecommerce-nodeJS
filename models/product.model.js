@@ -20,7 +20,7 @@ const Product = db.define("product", {
         allowNull: false,
     },
     price: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.DECIMAL(10, 2),
         allowNull: false,
     },
     categoryId: {
@@ -33,7 +33,6 @@ const Product = db.define("product", {
     },
     status: {
         type: DataTypes.STRING,
-        allowNull: false,
         defaultValue: "active",
     },
 });

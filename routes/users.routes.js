@@ -2,24 +2,28 @@ const express = require("express");
 
 // Controllers
 const {
-    getProductsForUsers,
+    getAllUsers,
+    getUserProducts,
     createUser,
     updateUser,
     deleteUser,
-    allOrderByUser,
-    ordersById,
+    getUserOrders,
+    getUserOrderById,
     login,
+    // checkToken,
 } = require("../controllers/users.controller.js");
 
 // Middlewares
-const { userExists } = require("../middlewares/users.middlewares.js");
+const {
+    userExists,
+    protectAccountOwner,
+} = require("../middlewares/users.middlewares.js");
 const {
     createUserValidators,
 } = require("../middlewares/validators.middlewares.js");
 const {
     protectSession,
     protectUsersAccount,
-    protectAdmin,
 } = require("../middlewares/auth.middlewares.js");
 
 const usersRouter = express.Router();
@@ -31,14 +35,16 @@ usersRouter.post("/login", login);
 // Protecting below endpoints
 usersRouter.use(protectSession);
 
-usersRouter.get("/me", getProductsForUsers);
+usersRouter.get("/", userExists, getAllUsers);
+
+usersRouter.get("/me", userExists, getUserProducts);
 
 usersRouter.patch("/:id", userExists, protectUsersAccount, updateUser);
 
 usersRouter.delete("/:id", userExists, protectUsersAccount, deleteUser);
 
-usersRouter.get("/orders", userExists, allOrderByUser);
+usersRouter.get("/orders", userExists, getUserOrders);
 
-usersRouter.get("/orders/:id", userExists, ordersById);
+usersRouter.get("/orders/:id", userExists, getUserOrderById);
 
 module.exports = { usersRouter };

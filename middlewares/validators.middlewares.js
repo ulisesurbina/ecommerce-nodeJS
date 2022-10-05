@@ -36,20 +36,34 @@ const createUserValidators = [
 
 const createProductValidators = [
     body("title")
-    .isString()
-    .withMessage("Title must be a string")
-    .notEmpty()
-    .withMessage("Title cannot be emply")
-    .isLength({ min: 2, max: 30 })
-    .withMessage("Title must be at least 3 characters"),
+        .isString()
+        .withMessage("Title must be a string")
+        .notEmpty()
+        .withMessage("Title cannot be emply")
+        .isLength({ min: 2, max: 30 })
+        .withMessage("Title must be at least 3 characters"),
     body("description")
         .isString()
         .withMessage("Description must be a string")
         .notEmpty()
-        .withMessage("Description cannot be emply")
-        .isLength({ min: 3, max: 90 })
-        .withMessage("Description must be at least 3 characters"),
+        .withMessage("Description cannot be emply"),
+    body("price")
+        .isFloat({ min: 0 })
+        // .custom(val => {
+        //   return val > 0;
+        // })
+        .withMessage("Price must be greater than 0"),
+    body("quantity")
+        .isInt({ min: 1 })
+        .withMessage("Quantity must be greater than 0"),
+    body("categoryId")
+        .isInt({ min: 1 })
+        .withMessage("Must provide a valid category"),
     checkValidations,
 ];
 
-module.exports = { createUserValidators, createProductValidators };
+module.exports = {
+    checkValidations,
+    createUserValidators,
+    createProductValidators,
+};

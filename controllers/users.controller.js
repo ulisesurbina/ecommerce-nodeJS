@@ -5,6 +5,7 @@ const dotenv = require("dotenv");
 // Models
 const { User } = require("../models/user.model.js");
 const { Product } = require("../models/product.model.js");
+const { Order } = require("../models/order.model.js");
 
 // Utils
 const { catchAsync } = require("../utils/catchAsync.util.js");
@@ -12,26 +13,18 @@ const { AppError } = require("../utils/appError.util.js");
 
 dotenv.config({ path: "./config.env" });
 
-const getProductsForUsers = catchAsync(async (req, res, next) => {
+const getAllUsers = catchAsync(async (req, res, next) => {
     const users = await User.findAll({
         attributes: { exclude: ["password"] },
-        where: { status: "active" },
-        include: [{ model: Product }],
     });
+
     res.status(200).json({
-        status: "success",
-        data: {
-            users: users,
-        },
+        users,
     });
 });
 
 const createUser = catchAsync(async (req, res, next) => {
     const { username, email, password } = req.body;
-
-    // if (role !== "admin" && role !== "normal") {
-    //     return next(new AppError("Invalid role", 400));
-    // }
 
     const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -47,6 +40,20 @@ const createUser = catchAsync(async (req, res, next) => {
     res.status(201).json({
         status: "success",
         data: { newUser },
+    });
+});
+
+const getUserProducts = catchAsync(async (req, res, next) => {
+    const users = await User.findAll({
+        attributes: { exclude: ["password"] },
+        where: { status: "active" },
+        include: [{ model: Product }],
+    });
+    res.status(200).json({
+        status: "success",
+        data: {
+            users: users,
+        },
     });
 });
 
@@ -71,11 +78,10 @@ const deleteUser = catchAsync(async (req, res, next) => {
     res.status(200).json({ status: "success" });
 });
 
-const allOrderByUser = async (req, res) => {
+const getUserOrders = catchAsync(async (req, res) => {
     const { id } = req.session;
-    const orders = await Order.findOne({
+    const orders = await Order.findAll({
         where: { userId: id, status: "active" },
-        include: [{ model: Meal, include: { model: Restaurant } }],
     });
 
     res.status(200).json({
@@ -84,19 +90,18 @@ const allOrderByUser = async (req, res) => {
             orders,
         },
     });
-};
+});
 
-const ordersById = async (req, res) => {
+const getUserOrderById = async (req, res) => {
     const { id } = req.params;
-    const meals = await Meal.findOne({
+    const orders = await Order.findOne({
         where: { id, status: "active" },
-        include: [{ model: Restaurant }],
     });
 
     res.status(200).json({
         status: "success",
         data: {
-            meals,
+            orders,
         },
     });
 };
@@ -125,12 +130,18 @@ const login = catchAsync(async (req, res, next) => {
     });
 });
 
+// const checkToken = catchAsync(async (req, res, next) => {
+//     res.status(200).json({ user: req.sessionUser });
+// });
+
 module.exports = {
-    getProductsForUsers,
+    getAllUsers,
+    getUserProducts,
     createUser,
     updateUser,
     deleteUser,
-    allOrderByUser,
-    ordersById,
+    getUserOrders,
+    getUserOrderById,
     login,
+    // checkToken,
 };

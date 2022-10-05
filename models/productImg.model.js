@@ -3,7 +3,6 @@ const { db, DataTypes } = require("../utils/database.util.js");
 const ProductImg = db.define("productImg", {
     id: {
         type: DataTypes.INTEGER,
-        unique: true,
         autoIncrement: true,
         allowNull: false,
         primaryKey: true,
@@ -18,7 +17,6 @@ const ProductImg = db.define("productImg", {
     },
     status: {
         type: DataTypes.STRING,
-        allowNull: false,
         defaultValue: "active",
     },
 });

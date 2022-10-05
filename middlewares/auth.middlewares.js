@@ -1,13 +1,10 @@
 const jwt = require("jsonwebtoken");
-const dotenv = require("dotenv");
 
 const { User } = require("../models/user.model.js");
 
 // Utils
 const { catchAsync } = require("../utils/catchAsync.util.js");
 const { AppError } = require("../utils/appError.util.js");
-
-dotenv.config({ path: "./config.env" });
 
 const protectSession = catchAsync(async (req, res, next) => {
     let token;
@@ -22,7 +19,6 @@ const protectSession = catchAsync(async (req, res, next) => {
     }
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    // console.log(decoded);
 
     // Verify token owner
     const user = await User.findOne({
@@ -39,18 +35,18 @@ const protectSession = catchAsync(async (req, res, next) => {
 });
 
 // Check the sessionUser to compare to the one that wants to be updated/deleted
-const protectUsersAccount = (req, res, next) => {
+const protectUsersAccount = catchAsync(async (req, res, next) => {
     const { sessionUser, user } = req;
-    
+
     if (sessionUser.id !== user.id) {
         return next(
             new AppError("You are not the owner of this account.", 403)
         );
     }
     next();
-};
+});
 
-const protectAdmin = (req, res, next) => {
+const protectAdmin = catchAsync(async (req, res, next) => {
     const { sessionUser } = req;
     if (sessionUser.role !== "admin") {
         return next(
@@ -58,7 +54,7 @@ const protectAdmin = (req, res, next) => {
         );
     }
     next();
-};
+});
 
 module.exports = {
     protectSession,

@@ -1,24 +1,67 @@
-const { Product } = require("../models/product.model.js");
+const { ref, getDownloadURL } = require("firebase/storage");
 
+const { Product } = require("../models/product.model.js");
+const { Category } = require("../models/categories.model.js");
+const { User } = require("../models/user.model.js");
+
+//Utils
+const { storage } = require("../utils/firebase.util.js");
 const { catchAsync } = require("../utils/catchAsync.util.js");
+const { uploadProductImgs } = require("../utils/firebase.util.js");
+
+const getAllProducts = catchAsync(async (req, res, next) => {
+    const products = await Product.findAll({
+        where: { status: "active" },
+        include: [
+            { model: Category, attributes: ["name"] },
+            { model: User, attributes: ["username", "email"] },
+        ],
+    });
+    res.status(201).json({ status: "success", products });
+});
+
+const getProductById = catchAsync(async (req, res, next) => {
+    const { product } = req;
+    const productImgsPromises = product.productImgs.map(async (productImg) => {
+        const imgRef = ref(storage, productImg.imgUrl);
+
+        const imgFullPath = await getDownloadURL(imgRef);
+
+        productImg.imgUrl = imgFullPath;
+    });
+
+    await Promise.all(productImgsPromises);
+
+    res.status(200).json({ status: "success", product });
+});
 
 const createProduct = catchAsync(async (req, res) => {
-    const { title, description, price, categoryId, quantity, userId } = req.body;
-    // const { id } = req.params;
-    const product = await Product.create({
+    const { sessionUser } = req;
+    const { title, description, price, categoryId, quantity } = req.body;
+    const newProduct = await Product.create({
         title,
         description,
         price,
         categoryId,
         quantity,
-        userId,
+        userId: sessionUser.id,
     });
-    if (!product) {
-        return res.status(400).json({
-            status: "error",
-            message: "Product no create",
-        });
-    }
+    await uploadProductImgs(req.files, newProduct.id);
+
+    res.status(201).json({
+        status: "success",
+        data: {
+            newProduct,
+        },
+    });
+});
+
+const updateProduct = catchAsync(async (req, res, next) => {
+    const { product } = req;
+    const { title, description, quantity, price } = req.body;
+
+    await product.update({ title, description, quantity, price });
+
     res.status(200).json({
         status: "success",
         data: {
@@ -27,62 +70,18 @@ const createProduct = catchAsync(async (req, res) => {
     });
 });
 
-// const allOrderByUser = async (req, res) => {
-//     const { id } = req.session;
-//     const orders = await Order.findOne({
-//         where: { userId: id, status: "active" },
-//         include: [{ model: Meal, include: { model: Restaurant } }],
-//     });
+const deleteProduct = catchAsync(async (req, res, next) => {
+    const { product } = req;
 
-//     res.status(200).json({
-//         status: "success",
-//         data: {
-//             orders,
-//         },
-//     });
-// };
+    await product.update({ status: "deleted" });
 
-// const updateOrder = async (req, res) => {
-//     const { id } = req.params;
-
-//     const order = await Order.findOne({ where: { id, status: "active" } });
-//     if (!order) {
-//         return res.status(400).json({
-//             status: "error",
-//             message: "order no found",
-//         });
-//     }
-//     await order.update({ status: "completed" });
-//     res.status(200).json({
-//         status: "success",
-//         data: {
-//             order,
-//         },
-//     });
-// };
-
-// const deleteOrder = async (req, res) => {
-//     const { id } = req.params;
-
-//     const order = await Order.findOne({ where: { id, status: "active" } });
-//     if (!order) {
-//         return res.status(400).json({
-//             status: "error",
-//             message: "order no found",
-//         });
-//     }
-//     await order.update({ status: "deleted" });
-//     res.status(200).json({
-//         status: "success",
-//         data: {
-//             order,
-//         },
-//     });
-// };
+    res.status(200).json({ status: "success" });
+});
 
 module.exports = {
+    getAllProducts,
+    getProductById,
     createProduct,
-    // allOrderByUser,
-    // updateOrder,
-    // deleteOrder,
+    updateProduct,
+    deleteProduct,
 };
