@@ -33,6 +33,10 @@ const dbUniqueConstraintError = () => {
     return new AppError("The entered email has already been taken", 400);
 };
 
+const imgLimitError = () => {
+    return new AppError("You can only upload 5 images", 400);
+};
+
 const globalErrorHandler = (error, req, res, next) => {
     error.statusCode = error.statusCode || 500;
     error.status = error.status || "fail";
@@ -47,6 +51,7 @@ const globalErrorHandler = (error, req, res, next) => {
             err = tokenInvalidSignatureError();
         else if (error.name === "SequelizeUniqueConstraintError")
             err = dbUniqueConstraintError();
+        else if (error.code === "LIMIT_UNEXPECTED_FILE") err = imgLimitError();
 
         sendErrorProd(err, req, res);
     }

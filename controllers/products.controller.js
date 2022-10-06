@@ -1,13 +1,14 @@
-const { ref, getDownloadURL } = require("firebase/storage");
+// const { ref, getDownloadURL } = require("firebase/storage");
 
 const { Product } = require("../models/product.model.js");
 const { Category } = require("../models/categories.model.js");
 const { User } = require("../models/user.model.js");
+const { ProductImg } = require("../models/productImg.model.js");
 
 //Utils
 const { storage } = require("../utils/firebase.util.js");
 const { catchAsync } = require("../utils/catchAsync.util.js");
-const { uploadProductImgs } = require("../utils/firebase.util.js");
+const { uploadProductImgs, getProductsImgsUrls } = require("../utils/firebase.util.js");
 
 const getAllProducts = catchAsync(async (req, res, next) => {
     const products = await Product.findAll({
@@ -15,24 +16,16 @@ const getAllProducts = catchAsync(async (req, res, next) => {
         include: [
             { model: Category, attributes: ["name"] },
             { model: User, attributes: ["username", "email"] },
+            { model: ProductImg },
         ],
     });
-    res.status(201).json({ status: "success", products });
+    const productWithImgs = await getProductsImgsUrls(products);
+    res.status(201).json({ status: "success", products: productWithImgs });
 });
 
 const getProductById = catchAsync(async (req, res, next) => {
-    const { product } = req;
-    const productImgsPromises = product.productImgs.map(async (productImg) => {
-        const imgRef = ref(storage, productImg.imgUrl);
 
-        const imgFullPath = await getDownloadURL(imgRef);
-
-        productImg.imgUrl = imgFullPath;
-    });
-
-    await Promise.all(productImgsPromises);
-
-    res.status(200).json({ status: "success", product });
+    res.status(200).json({ status: "success" });
 });
 
 const createProduct = catchAsync(async (req, res) => {

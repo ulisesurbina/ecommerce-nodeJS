@@ -1,5 +1,5 @@
 const { initializeApp } = require("firebase/app");
-const { getStorage, ref, uploadBytes } = require("firebase/storage");
+const { getStorage, ref, uploadBytes, getDownloadURL } = require("firebase/storage");
 
 const { ProductImg } = require("../models/productImg.model.js");
 
@@ -28,10 +28,8 @@ const uploadProductImgs = async (imgs, productId) => {
                 process.env.NODE_ENV
             }/products/${productId}/${filename}-${Date.now()}.${extension}`;
 
-            // Create ref
             const imgRef = ref(storage, productImg);
 
-            // Upload img
             const result = await uploadBytes(imgRef, img.buffer);
 
             return await ProductImg.create({
@@ -46,4 +44,26 @@ const uploadProductImgs = async (imgs, productId) => {
     }
 };
 
-module.exports = { storage, uploadProductImgs };
+const getProductsImgsUrls = async (products) => {
+    // Loop through post to get to the postImgs
+    const productWithImgsPromises = products.map(async (product) => {
+        // Get images URLs
+        const productImgsPromises = product.productImgs.map(
+            async (productImg) => {
+                const imgRef = ref(storage, productImg.imgUrl);
+                const imgUrl = await getDownloadURL(imgRef);
+
+                productImg.imgUrl = imgUrl;
+                return productImg;
+            }
+        );
+        // Resolve imgs URL
+        const productImgs = await Promise.all(productImgsPromises);
+        // Update old postImgs array with new array
+        product.productImgs = productImgs;
+        return product;
+    });
+    return await Promise.all(productWithImgsPromises);
+};
+
+module.exports = { storage, uploadProductImgs, getProductsImgsUrls };

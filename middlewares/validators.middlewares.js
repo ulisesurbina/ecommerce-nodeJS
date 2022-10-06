@@ -17,8 +17,6 @@ const checkValidations = (req, res, next) => {
 
 const createUserValidators = [
     body("username")
-        .isString()
-        .withMessage("Username must be a string")
         .notEmpty()
         .withMessage("Username cannot be emply")
         .isLength({ min: 3, max: 30 })
@@ -62,8 +60,13 @@ const createProductValidators = [
     checkValidations,
 ];
 
+const createCategoryValidations = [
+    body("name").notEmpty().withMessage("Name cannot be empty"),
+];
+
 module.exports = {
     checkValidations,
     createUserValidators,
     createProductValidators,
+    createCategoryValidations,
 };

@@ -2,6 +2,7 @@
 const { Cart } = require("../models/cart.model.js");
 const { Product } = require("../models/product.model.js");
 const { ProductInCart } = require("../models/productInCart.model.js");
+const { Order } = require("../models/order.model.js");
 
 // Utils
 const { catchAsync } = require("../utils/catchAsync.util.js");
@@ -11,7 +12,7 @@ const getUserCart = catchAsync(async (req, res, next) => {
     const { sessionUser } = req;
 
     const cart = await Cart.findOne({
-        where: { userId: sessionUser.id, status: "active" },
+        where: { status: "active", userId: sessionUser.id },
         include: [
             {
                 model: ProductInCart,
@@ -154,30 +155,36 @@ const purchaseCart = catchAsync(async (req, res, next) => {
     });
 
     if (!cart) {
-        return next(new AppError("Cart not found", 404));
+        return next(new AppError("This user does not have a cart", 404));
     }
 
     let totalPrice = 0;
 
     const productsPurchasedPromises = cart.productInCarts.map(
         async (productInCart) => {
+            await productInCart.update({ status: "purchased" });
+            const productPrice =
+                productInCart.quantity * productInCart.product.price;
+
+            totalPrice += productPrice;
             const newQty =
                 productInCart.product.quantity - productInCart.quantity;
 
-            const productPrice =
-                productInCart.quantity * +productInCart.product.price;
-
-            totalPrice += productPrice;
-
             await productInCart.product.update({ quantity: newQty });
-
-            return await productInCart.update({ status: "purchased" });
         }
     );
 
     await Promise.all(productsPurchasedPromises);
 
-    res.status(200).json({ status: "success" });
+    await cart.update({ status: "purchased" });
+
+    const newOrder = await Order.create({
+        cartId: cart.id,
+        userId: sessionUser.id,
+        totalPrice,
+    });
+
+    res.status(201).json({ status: "success", data: newOrder });
 });
 
 const removeProductFromCart = catchAsync(async (req, res, next) => {
@@ -189,7 +196,7 @@ const removeProductFromCart = catchAsync(async (req, res, next) => {
     });
 
     if (!cart) {
-        return next(new AppError("Cart not found", 404));
+        return next(new AppError("This user does not have a cart", 400));
     }
 
     const productInCart = await ProductInCart.findOne({
@@ -199,7 +206,7 @@ const removeProductFromCart = catchAsync(async (req, res, next) => {
     });
 
     if (!productInCart) {
-        return next(new AppError("Product not found in cart", 404));
+        return next(new AppError("Product not found in cart", 400));
     }
 
     await productInCart.update({ status: "removed", quantity: 0 });
